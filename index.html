@@ -177,10 +177,23 @@
         line-height: 52px !important;
         font-weight: bold !important;
     } 
-      /* Aumenta a área de toque das rotas e linhas no telemóvel */
+      /* Aumenta a área de toque das rotas e linhas na tela */
     .leaflet-interactive {
         stroke-width: 7px !important;
-    }      
+    }
+/* Responsividade perfeita para o logotipo em dispositivos móveis */
+    img[src*="geo_pedal_rg"], .logo-img {
+        max-width: 100px !important;
+        height: auto !important;
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        img[src*="geo_pedal_rg"], .logo-img {
+            max-width: 80px !important; /* Reduz ligeiramente em telas de telemóvel */
+        }
+    }
+            
         </style>
 <!-- --- SCRIPT DE PROTEÇÃO (BOTÃO DIREITO E ATALHOS) --- -->
         <script>
