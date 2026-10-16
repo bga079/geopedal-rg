@@ -6,6 +6,7 @@
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
+        <title>GEOPEDAL RG</title>
         <link rel="stylesheet" href="css/leaflet.css">
         <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
         <link rel="stylesheet" href="css/L.Control.Locate.min.css">
@@ -34,6 +35,7 @@
             object-fit: contain;
             filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.5));
             pointer-events: auto;
+            cursor: pointer;
         }
         .leaflet-top.leaflet-left {
             margin-top: 115px;
@@ -150,55 +152,31 @@
             color: #2c3e50;
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
-         /* Aumenta o botão do controle de camadas para facilitar o toque no celular */
-.leaflet-control-layers-toggle {
-    width: 44px !important;
-    height: 44px !important;
-    background-size: 26px 26px !important;
-}
 
-.leaflet-control-layers-toggle::after {
-    font-size: 22px !important;
-    line-height: 44px !important;
-}   
- /* Aumenta e afasta o botão de camadas para facilitar o toque no telemóvel */
-    .leaflet-control-layers {
-        border-radius: 10px !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-    }
-    .leaflet-control-layers-toggle {
-        width: 52px !important;
-        height: 52px !important;
-        background-size: 30px 30px !important;
-        background-position: center !important;
-    }
-    .leaflet-control-layers-toggle::after {
-        font-size: 30px !important;
-        line-height: 52px !important;
-        font-weight: bold !important;
-    } 
-      /* Aumenta a área de toque das rotas e linhas na tela */
-    .leaflet-interactive {
-        stroke-width: 7px !important;
-    }
-
-            /* Logótipo com tamanho ideal e total interatividade para zoom/clique */
-    img[src*="geo_pedal_rg"], .logo-img {
-        max-width: 150px !important;
-        width: 100% !important;
-        height: auto !important;
-        cursor: pointer;
-        pointer-events: auto !important;
-    }
-
-    @media (max-width: 768px) {
-        img[src*="geo_pedal_rg"], .logo-img {
-            max-width: 120px !important; /* Tamanho maior e confortável no telemóvel */
+        /* Aumenta e afasta o botão de camadas para facilitar o toque no telemóvel */
+        .leaflet-control-layers {
+            border-radius: 10px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
         }
-    }
-            
+        .leaflet-control-layers-toggle {
+            width: 52px !important;
+            height: 52px !important;
+            background-size: 30px 30px !important;
+            background-position: center !important;
+        }
+        .leaflet-control-layers-toggle::after {
+            font-size: 30px !important;
+            line-height: 52px !important;
+            font-weight: bold !important;
+        }
+
+        /* Aumenta a área de toque das rotas e linhas na tela */
+        .leaflet-interactive {
+            stroke-width: 7px !important;
+        }
         </style>
-<!-- --- SCRIPT DE PROTEÇÃO (BOTÃO DIREITO E ATALHOS) --- -->
+
+        <!-- --- SCRIPT DE PROTEÇÃO (BOTÃO DIREITO E ATALHOS) --- -->
         <script>
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
@@ -207,19 +185,16 @@
 
             document.addEventListener('keydown', function(e) {
                 if (
-                    e.keyCode === 123 || // F12
-                    (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || // Ctrl+Shift+I / J
-                    (e.keyCode === 85 && e.ctrlKey) || // Ctrl+U
-                    (e.keyCode === 83 && e.ctrlKey)    // Ctrl+S
+                    e.keyCode === 123 || 
+                    (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || 
+                    (e.keyCode === 85 && e.ctrlKey) || 
+                    (e.keyCode === 83 && e.ctrlKey)    
                 ) {
                     e.preventDefault();
                     return false;
                 }
             });
         </script>
-    </head>
-    <body>
-        <title>GEOPEDAL RG</title>
     </head>
     <body>
         <!-- Logomarca Flutuante (Superior Esquerda) -->
@@ -241,7 +216,6 @@
             </span>
             . Téc. Geoprocessamento Bruno Almeida.
         </div>
-        
 
         <!-- Barra de Escala / Altimetria (Inferior Direita) -->
         <div class="altimetry-legend" id="altimetryLegend">
@@ -276,8 +250,8 @@
             </div>
         </div>
 
-        <div id="map">
-        </div>
+        <div id="map"></div>
+
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
         <script src="js/L.Control.Layers.Tree.min.js"></script>
@@ -452,7 +426,7 @@
             layer.bindPopup(content, { maxHeight: 400 });
         }
 
-        /* --- FUNÇÃO ESPECÍFICA PARA CICLO MOBILIDADE (EXIBE A DISTÂNCIA DO QGIS) --- */
+        /* --- FUNÇÃO ESPECÍFICA PARA CICLO MOBILIDADE --- */
         function pop_CicloMobilidade(feature, layer) {
             var props = feature.properties || {};
             
@@ -560,451 +534,6 @@
                                               {pane: 'pane_PERFILALTIMTRICO_2'});
         bounds_group.addLayer(layer_PERFILALTIMTRICO_2);
 
-        /* --- POPUPS DE ATRAÇÕES RURAIS E URBANAS --- */
-        function pop_AtraesRurais_3(feature, layer) {
-            var props = feature.properties || {};
-            var nomeLocal = props['Nome'] ?? props['nome'] ?? '';
-            var endereco = props['Endereco'] ?? props['Endereço'] ?? props['endereco'] ?? '';
-            var descricao = props['Descrição'] ?? props['Descriçã'] ?? props['descricao'] ?? props['Descrio'] ?? '';
-            var imgSlug = String(props['ID'] ?? props['id'] ?? slugify(nomeLocal)).trim();
-            
-            var popupContent = '<table style="width: 240px;">\
-                    <tr><td colspan="2" style="font-size: 13px; font-weight: bold; color: #2c3e50; padding-bottom: 4px;">' + autolinker.link(String(nomeLocal)) + '</td></tr>\
-                    ' + (endereco ? '<tr><td colspan="2" style="font-size: 11px; color: #555; padding-bottom: 4px;"><b>Endereço:</b> ' + autolinker.link(String(endereco)) + '</td></tr>' : '') + '\
-                    ' + (descricao ? '<tr><td colspan="2" style="font-size: 11px; color: #444; padding-bottom: 6px;"><b>Descrição:</b> ' + autolinker.link(String(descricao)) + '</td></tr>' : '') + '\
-                    <tr><td colspan="2" style="text-align: center; padding-top: 4px;"><img src="images/' + imgSlug + '.jpg" style="width: 100%; height: 130px; object-fit: cover; border-radius: 4px;" onerror="handleImageError(this, \'' + imgSlug + '\')"></td></tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) { addClassToPopupIfMedia(content, e.popup); });
-            layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        function pop_AtraesUrbanas_4(feature, layer) {
-            var props = feature.properties || {};
-            var nomeLocal = props['Nome'] ?? props['nome'] ?? '';
-            var endereco = props['Endereco'] ?? props['Endereço'] ?? props['endereco'] ?? '';
-            var descricao = props['Descrição'] ?? props['Descriçã'] ?? props['descricao'] ?? props['Descrio'] ?? '';
-            var imgSlug = String(props['ID'] ?? props['id'] ?? slugify(nomeLocal)).trim();
-            
-            var popupContent = '<table style="width: 240px;">\
-                    <tr><td colspan="2" style="font-size: 13px; font-weight: bold; color: #2c3e50; padding-bottom: 4px;">' + autolinker.link(String(nomeLocal)) + '</td></tr>\
-                    ' + (endereco ? '<tr><td colspan="2" style="font-size: 11px; color: #555; padding-bottom: 4px;"><b>Endereço:</b> ' + autolinker.link(String(endereco)) + '</td></tr>' : '') + '\
-                    ' + (descricao ? '<tr><td colspan="2" style="font-size: 11px; color: #444; padding-bottom: 6px;"><b>Descrição:</b> ' + autolinker.link(String(descricao)) + '</td></tr>' : '') + '\
-                    <tr><td colspan="2" style="text-align: center; padding-top: 4px;"><img src="images/' + imgSlug + '.jpg" style="width: 100%; height: 130px; object-fit: cover; border-radius: 4px;" onerror="handleImageError(this, \'' + imgSlug + '\')"></td></tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) { addClassToPopupIfMedia(content, e.popup); });
-            layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        /* --- POPUP DE LOJAS E OFICINAS --- */
-        function pop_LojasOficinas_5(feature, layer) {
-            var props = feature.properties || {};
-            
-            var nomeLocal = props['Nome'] ?? props['nome'] ?? '';
-            var endereco = props['Endereco'] ?? props['Endereço'] ?? props['endereco'] ?? '';
-            var contato = props['Contato'] ?? props['contato'] ?? props['Telefone'] ?? props['telefone'] ?? '';
-            var redeSocial = props['Rede_Social'] ?? props['RedeSocial'] ?? props['rede_social'] ?? props['Instagram'] ?? props['instagram'] ?? '';
-            
-            var descricao = '';
-            for (var key in props) {
-                if (key.toLowerCase().indexOf('desc') === 0) {
-                    if (props[key] !== null && props[key] !== undefined && String(props[key]).trim() !== '') {
-                        descricao = props[key];
-                        break;
-                    }
-                }
-            }
-            
-            var imgSlug = String(props['ID'] ?? props['id'] ?? slugify(nomeLocal)).trim();
-
-            var popupContent = '<table style="width: 240px;">\
-                    <tr><td colspan="2" style="font-size: 13px; font-weight: bold; color: #2c3e50; padding-bottom: 4px;">' + autolinker.link(String(nomeLocal)) + '</td></tr>\
-                    ' + (endereco ? '<tr><td colspan="2" style="font-size: 11px; color: #555; padding-bottom: 3px;"><b>Endereço:</b> ' + autolinker.link(String(endereco)) + '</td></tr>' : '') + '\
-                    ' + (contato ? '<tr><td colspan="2" style="font-size: 11px; color: #555; padding-bottom: 3px;"><b>Contato:</b> ' + autolinker.link(String(contato)) + '</td></tr>' : '') + '\
-                    ' + (redeSocial ? '<tr><td colspan="2" style="font-size: 11px; color: #555; padding-bottom: 3px;"><b>Rede Social:</b> ' + autolinker.link(String(redeSocial)) + '</td></tr>' : '') + '\
-                    ' + (descricao ? '<tr><td colspan="2" style="font-size: 11px; color: #444; padding-bottom: 6px;"><b>Descrição:</b> ' + autolinker.link(String(descricao)) + '</td></tr>' : '') + '\
-                    <tr><td colspan="2" style="text-align: center; padding-top: 4px;"><img src="images/' + imgSlug + '.jpg" style="width: 100%; height: 130px; object-fit: cover; border-radius: 4px;" onerror="handleImageError(this, \'' + imgSlug + '\')"></td></tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) { addClassToPopupIfMedia(content, e.popup); });
-            layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        function pop_SeguranaEmergncia_6(feature, layer) {
-            var props = feature.properties || {};
-            var nomeLocal = props['Nome'] ?? props['nome'] ?? '';
-            var endereco = props['Endereco'] ?? props['Endereço'] ?? props['endereco'] ?? '';
-            var contato = props['Contato'] ?? props['contato'] ?? props['Telefone'] ?? '';
-
-            var popupContent = '<table style="width: 240px;">\
-                    <tr><td colspan="2" style="font-size: 13px; font-weight: bold; color: #2c3e50; padding-bottom: 4px;">' + autolinker.link(String(nomeLocal)) + '</td></tr>\
-                    ' + (endereco ? '<tr><td colspan="2" style="font-size: 11px; color: #555; padding-bottom: 3px;"><b>Endereço:</b> ' + autolinker.link(String(endereco)) + '</td></tr>' : '') + '\
-                    ' + (contato ? '<tr><td colspan="2" style="font-size: 11px; color: #555; padding-bottom: 3px;"><b>Contato:</b> ' + autolinker.link(String(contato)) + '</td></tr>' : '') + '\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        /* --- FUNÇÃO AUXILIAR PARA CRIAR ÍCONES DE POI (28px - ÁREA DE TOQUE CONFORTÁVEL) --- */
-        function criarIconePOI(iconClass, corFundo) {
-            return L.divIcon({
-                className: 'custom-poi-marker',
-                html: '<div style="background-color: ' + corFundo + '; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); font-size: 12px; border: 2px solid white;"><i class="' + iconClass + '"></i></div>',
-                iconSize: [28, 28],
-                iconAnchor: [14, 14]
-            });
-        }
-
-        /* --- 1. ATRAÇÕES RURAIS (Câmera Verde) --- */
-        map.createPane('pane_AtraesRurais_3');
-        map.getPane('pane_AtraesRurais_3').style.zIndex = 403;
-        var layer_AtraesRurais_3 = new L.geoJson(json_AtraesRurais_3, {
-            attribution: '', interactive: true, pane: 'pane_AtraesRurais_3', onEachFeature: pop_AtraesRurais_3,
-            pointToLayer: function (feature, latlng) {
-                return L.marker(latlng, { icon: criarIconePOI('fas fa-camera', '#27ae60') });
-            },
-        });
-        bounds_group.addLayer(layer_AtraesRurais_3);
-
-        /* --- 2. ATRAÇÕES URBANAS (Câmera Azul) --- */
-        map.createPane('pane_AtraesUrbanas_4');
-        map.getPane('pane_AtraesUrbanas_4').style.zIndex = 404;
-        var layer_AtraesUrbanas_4 = new L.geoJson(json_AtraesUrbanas_4, {
-            attribution: '', interactive: true, pane: 'pane_AtraesUrbanas_4', onEachFeature: pop_AtraesUrbanas_4,
-            pointToLayer: function (feature, latlng) {
-                return L.marker(latlng, { icon: criarIconePOI('fas fa-camera', '#2980b9') });
-            },
-        });
-        bounds_group.addLayer(layer_AtraesUrbanas_4);
-
-        /* --- 3. LOJAS / OFICINAS (Chave Inglesa Grafite) --- */
-        map.createPane('pane_LojasOficinas_5');
-        map.getPane('pane_LojasOficinas_5').style.zIndex = 405;
-        var layer_LojasOficinas_5 = new L.geoJson(json_LojasOficinas_5, {
-            attribution: '', interactive: true, pane: 'pane_LojasOficinas_5', onEachFeature: pop_LojasOficinas_5,
-            pointToLayer: function (feature, latlng) {
-                return L.marker(latlng, { icon: criarIconePOI('fas fa-wrench', '#34495e') });
-            },
-        });
-        bounds_group.addLayer(layer_LojasOficinas_5);
-
-        /* --- 4. SEGURANÇA / EMERGÊNCIA (Escudo Vermelho) --- */
-        map.createPane('pane_SeguranaEmergncia_6');
-        map.getPane('pane_SeguranaEmergncia_6').style.zIndex = 406;
-        var layer_SeguranaEmergncia_6 = new L.geoJson(json_SeguranaEmergncia_6, {
-            attribution: '', interactive: true, pane: 'pane_SeguranaEmergncia_6', onEachFeature: pop_SeguranaEmergncia_6,
-            pointToLayer: function (feature, latlng) {
-                return L.marker(latlng, { icon: criarIconePOI('fas fa-shield-alt', '#c0392b') });
-            },
-        });
-        bounds_group.addLayer(layer_SeguranaEmergncia_6);
-
-        /* --- CAMADAS DE CICLO MOBILIDADE --- */
-        var layer_COMPARTILHADO_7 = new L.geoJson(json_COMPARTILHADO_7, { 
-            attribution: '', interactive: true, onEachFeature: pop_CicloMobilidade, 
-            style: function() { return {pane: 'pane_COMPARTILHADO_7', opacity: 1, color: 'rgba(243,253,2,1.0)', weight: 4.0}; } 
-        });
-        map.createPane('pane_COMPARTILHADO_7'); map.getPane('pane_COMPARTILHADO_7').style.zIndex = 407; bounds_group.addLayer(layer_COMPARTILHADO_7);
-
-        var layer_CICLOVIAS_8 = new L.geoJson(json_CICLOVIAS_8, { 
-            attribution: '', interactive: true, onEachFeature: pop_CicloMobilidade, 
-            style: function() { return {pane: 'pane_CICLOVIAS_8', opacity: 1, color: 'rgba(251,110,2,1.0)', weight: 4.0}; } 
-        });
-        map.createPane('pane_CICLOVIAS_8'); map.getPane('pane_CICLOVIAS_8').style.zIndex = 408; bounds_group.addLayer(layer_CICLOVIAS_8);
-
-        var layer_CICLOFAIXAS_9 = new L.geoJson(json_CICLOFAIXAS_9, { 
-            attribution: '', interactive: true, onEachFeature: pop_CicloMobilidade, 
-            style: function() { return {pane: 'pane_CICLOFAIXAS_9', opacity: 1, color: 'rgba(150,252,27,1.0)', weight: 4.0}; } 
-        });
-        map.createPane('pane_CICLOFAIXAS_9'); map.getPane('pane_CICLOFAIXAS_9').style.zIndex = 409; bounds_group.addLayer(layer_CICLOFAIXAS_9);
-
-        // Pistas BMX com Preenchimento Laranja e Borda Escura + Rótulos Discretos
-        function pop_PistasBMXDIRTYPARK_10(feature, layer) {
-            var props = feature.properties || {};
-            var nomeLocal = props['Estilo'] ?? props['Nome'] ?? props['nome'] ?? 'Pista BMX';
-            var endereco = props['Endereco'] ?? props['Endereço'] ?? props['endereco'] ?? '';
-            var descricao = props['Decrição'] ?? props['Descrição'] ?? props['Descriçã'] ?? props['descricao'] ?? props['Descricao'] ?? '';
-            var imgSlug = String(props['ID'] ?? props['id'] ?? '').trim();
-            
-            var popupContent = '<table style="width: 240px;">\
-                    <tr><td colspan="2" style="font-size: 13px; font-weight: bold; color: #2c3e50; padding-bottom: 4px;">' + autolinker.link(String(nomeLocal)) + '</td></tr>\
-                    ' + (endereco ? '<tr><td colspan="2" style="font-size: 11px; color: #555; padding-bottom: 3px;"><b>Endereço:</b> ' + autolinker.link(String(endereco)) + '</td></tr>' : '') + '\
-                    ' + (descricao ? '<tr><td colspan="2" style="font-size: 11px; color: #444; padding-bottom: 6px;"><b>Descrição:</b> ' + autolinker.link(String(descricao)) + '</td></tr>' : '') + '\
-                    ' + (imgSlug ? '<tr><td colspan="2" style="text-align: center;"><img src="images/' + imgSlug + '.jpg" style="width: 100%; height: 130px; object-fit: cover; border-radius: 4px;" onerror="handleImageError(this, \'' + imgSlug + '\')"></td></tr>' : '') + '\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.bindPopup(content, { maxHeight: 400 });
-
-            // Rótulo Permanente
-            if (nomeLocal) {
-                layer.bindTooltip(nomeLocal, {permanent: true, direction: 'center', className: 'leaflet-tooltip-own'});
-            }
-        }
-        var layer_PistasBMXDIRTYPARK_10 = new L.geoJson.multiStyle(json_PistasBMXDIRTYPARK_10, {
-            attribution: '', interactive: true, onEachFeature: pop_PistasBMXDIRTYPARK_10,
-            styles: [
-                function() { return {pane: 'pane_PistasBMXDIRTYPARK_10', color: 'rgba(35,35,35,0.0)', weight: 1.0, fill: true, fillColor: 'rgba(251,152,8,1.0)'}; },
-                function() { return {pane: 'pane_PistasBMXDIRTYPARK_10', color: 'rgba(211,84,0,1.0)', weight: 2.0, fill: false}; }
-            ]
-        });
-        map.createPane('pane_PistasBMXDIRTYPARK_10'); map.getPane('pane_PistasBMXDIRTYPARK_10').style.zIndex = 410; bounds_group.addLayer(layer_PistasBMXDIRTYPARK_10);
-
-        // Cicloviagens e Rotas
-        var layer_CassinoxBarraChuFaixalitornea_11 = new L.geoJson.multiStyle(json_CassinoxBarraChuFaixalitornea_11, { attribution: '', interactive: true, onEachFeature: pop_RotaGeral, styles: [function() { return {pane: 'pane_CassinoxBarraChuFaixalitornea_11', color: 'rgba(7,239,252,1.0)', weight: 3.0}; }, function() { return {pane: 'pane_CassinoxBarraChuFaixalitornea_11', color: 'rgba(243,253,2,1.0)', weight: 3.0}; }] });
-        map.createPane('pane_CassinoxBarraChuFaixalitornea_11'); map.getPane('pane_CassinoxBarraChuFaixalitornea_11').style.zIndex = 411; bounds_group.addLayer(layer_CassinoxBarraChuFaixalitornea_11);
-
-        var layer_VoltaLagunadosPatos_12 = new L.geoJson.multiStyle(json_VoltaLagunadosPatos_12, { attribution: '', interactive: true, onEachFeature: pop_RotaGeral, styles: [function() { return {pane: 'pane_VoltaLagunadosPatos_12', color: 'rgba(7,239,252,1.0)', weight: 3.0}; }, function() { return {pane: 'pane_VoltaLagunadosPatos_12', color: 'rgba(243,253,2,1.0)', weight: 3.0}; }] });
-        map.createPane('pane_VoltaLagunadosPatos_12'); map.getPane('pane_VoltaLagunadosPatos_12').style.zIndex = 412; bounds_group.addLayer(layer_VoltaLagunadosPatos_12);
-
-        var layer_VoltaLagoaMirim_13 = new L.geoJson.multiStyle(json_VoltaLagoaMirim_13, { attribution: '', interactive: true, onEachFeature: pop_RotaGeral, styles: [function() { return {pane: 'pane_VoltaLagoaMirim_13', color: 'rgba(7,239,252,1.0)', weight: 3.0}; }, function() { return {pane: 'pane_VoltaLagoaMirim_13', color: 'rgba(243,253,2,1.0)', weight: 3.0}; }] });
-        map.createPane('pane_VoltaLagoaMirim_13'); map.getPane('pane_VoltaLagoaMirim_13').style.zIndex = 413; bounds_group.addLayer(layer_VoltaLagoaMirim_13);
-
-        // Velódromos com Preenchimento Laranja e Borda Escura + Rótulos Discretos
-        function pop_Veldromos_14(feature, layer) {
-            var props = feature.properties || {};
-            var nomeLocal = props['Velódromo'] ?? props['Nome'] ?? props['nome'] ?? '';
-            var descricao = props['Descriçã'] ?? props['Descrição'] ?? props['descricao'] ?? '';
-            var imgSlug = slugify(nomeLocal);
-            var popupContent = '<table style="width: 240px;">\
-                    <tr><td colspan="2" style="font-size: 13px; font-weight: bold; color: #2c3e50; padding-bottom: 4px;">' + autolinker.link(String(nomeLocal)) + '</td></tr>\
-                    ' + (descricao ? '<tr><td colspan="2" style="font-size: 11px; color: #444; padding-bottom: 6px;"><b>Descrição:</b> ' + autolinker.link(String(descricao)) + '</td></tr>' : '') + '\
-                    <tr><td colspan="2" style="text-align: center;"><img src="images/' + imgSlug + '.jpg" style="width: 100%; height: 130px; object-fit: cover; border-radius: 4px;" onerror="handleImageError(this, \'' + imgSlug + '\')"></td></tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.bindPopup(content, { maxHeight: 400 });
-
-            // Rótulo Permanente
-            if (nomeLocal) {
-                layer.bindTooltip(nomeLocal, {permanent: true, direction: 'center', className: 'leaflet-tooltip-own'});
-            }
-        }
-        var layer_Veldromos_14 = new L.geoJson.multiStyle(json_Veldromos_14, {
-            attribution: '', interactive: true, onEachFeature: pop_Veldromos_14,
-            styles: [
-                function() { return {pane: 'pane_Veldromos_14', color: 'rgba(35,35,35,0.0)', weight: 1.0, fill: true, fillColor: 'rgba(251,152,8,1.0)'}; },
-                function() { return {pane: 'pane_Veldromos_14', color: 'rgba(211,84,0,1.0)', weight: 2.0, fill: false}; }
-            ]
-        });
-        map.createPane('pane_Veldromos_14'); map.getPane('pane_Veldromos_14').style.zIndex = 414; bounds_group.addLayer(layer_Veldromos_14);
-
-        var layer_RedeViriaPavimentada_15 = new L.geoJson.multiStyle(json_RedeViriaPavimentada_15, { attribution: '', interactive: false, styles: [function() { return {pane: 'pane_RedeViriaPavimentada_15', color: 'rgba(0,0,0,1.0)', weight: 8.0}; }, function() { return {pane: 'pane_RedeViriaPavimentada_15', color: 'rgba(255,227,14,1.0)', weight: 1.0}; }] });
-        map.createPane('pane_RedeViriaPavimentada_15'); map.getPane('pane_RedeViriaPavimentada_15').style.zIndex = 415; bounds_group.addLayer(layer_RedeViriaPavimentada_15);
-
-        // Criando todas as camadas de rotas (16 até 44) utilizando a função pop_RotaGeral
-        var rotasConfigs = [
-            { layer: 'layer_Rota5MTBGRAVEL_16', json: json_Rota5MTBGRAVEL_16, color: 'rgba(255,0,249,1.0)', z: 416 },
-            { layer: 'layer_Rota4MTBGRAVEL_17', json: json_Rota4MTBGRAVEL_17, color: 'rgba(7,239,252,1.0)', z: 417 },
-            { layer: 'layer_Rota3MTBGRAVEL_18', json: json_Rota3MTBGRAVEL_18, color: 'rgba(243,253,2,1.0)', z: 418 },
-            { layer: 'layer_Rota2MTBGRAVEL_19', json: json_Rota2MTBGRAVEL_19, color: 'rgba(251,110,2,1.0)', z: 419 },
-            { layer: 'layer_Rota1MTBGRAVEL_20', json: json_Rota1MTBGRAVEL_20, color: 'rgba(150,252,27,1.0)', z: 420 },
-            { layer: 'layer_Rota5MTBGRAVEL_21', json: json_Rota5MTBGRAVEL_21, color: 'rgba(255,0,249,1.0)', z: 421 },
-            { layer: 'layer_Rota4MTBGRAVEL_22', json: json_Rota4MTBGRAVEL_22, color: 'rgba(7,239,252,1.0)', z: 422 },
-            { layer: 'layer_Rota3MTBGRAVELROAD_23', json: json_Rota3MTBGRAVELROAD_23, color: 'rgba(243,253,2,1.0)', z: 423 },
-            { layer: 'layer_Rota2MTBGRAVELROAD_24', json: json_Rota2MTBGRAVELROAD_24, color: 'rgba(251,110,2,1.0)', z: 424 },
-            { layer: 'layer_Rota1MTBGRAVEL_25', json: json_Rota1MTBGRAVEL_25, color: 'rgba(150,252,27,1.0)', z: 425 },
-            { layer: 'layer_Rota6MTBGRAVELROAD_26', json: json_Rota6MTBGRAVELROAD_26, color: 'rgba(6,7,251,1.0)', z: 426 },
-            { layer: 'layer_Rota5MTBGRAVEL_27', json: json_Rota5MTBGRAVEL_27, color: 'rgba(255,0,249,1.0)', z: 427 },
-            { layer: 'layer_Rota4MTBGRAVELROAD_28', json: json_Rota4MTBGRAVELROAD_28, color: 'rgba(7,239,252,1.0)', z: 428 },
-            { layer: 'layer_Rota3MTBGRAVELROAD_29', json: json_Rota3MTBGRAVELROAD_29, color: 'rgba(243,253,2,1.0)', z: 429 },
-            { layer: 'layer_Rota2MTBGRAVEL_30', json: json_Rota2MTBGRAVEL_30, color: 'rgba(251,110,2,1.0)', z: 430 },
-            { layer: 'layer_Rota1MTBGRAVEL_31', json: json_Rota1MTBGRAVEL_31, color: 'rgba(150,252,27,1.0)', z: 431 },
-            { layer: 'layer_Rota7MTBGRAVEL_32', json: json_Rota7MTBGRAVEL_32, color: 'rgba(255,255,255,1.0)', z: 432 },
-            { layer: 'layer_Rota6MTBGRAVEL_33', json: json_Rota6MTBGRAVEL_33, color: 'rgba(6,7,251,1.0)', z: 433 },
-            { layer: 'layer_Rota5MTBGRAVEL_34', json: json_Rota5MTBGRAVEL_34, color: 'rgba(255,0,249,1.0)', z: 434 },
-            { layer: 'layer_Rota4MTBGRAVEL_35', json: json_Rota4MTBGRAVEL_35, color: 'rgba(7,239,252,1.0)', z: 435 },
-            { layer: 'layer_Rota3MTBGRAVEL_36', json: json_Rota3MTBGRAVEL_36, color: 'rgba(243,253,2,1.0)', z: 436 },
-            { layer: 'layer_Rota2MTBGRAVELROAD_37', json: json_Rota2MTBGRAVELROAD_37, color: 'rgba(251,110,2,1.0)', z: 437 },
-            { layer: 'layer_Rota1MTBGRAVEL_38', json: json_Rota1MTBGRAVEL_38, color: 'rgba(150,252,27,1.0)', z: 438 },
-            { layer: 'layer_Rota6_39', json: json_Rota6_39, color: 'rgba(6,7,251,1.0)', z: 439 },
-            { layer: 'layer_Rota5_40', json: json_Rota5_40, color: 'rgba(255,0,249,1.0)', z: 440 },
-            { layer: 'layer_Rota4_41', json: json_Rota4_41, color: 'rgba(7,239,252,1.0)', z: 441 },
-            { layer: 'layer_Rota3_42', json: json_Rota3_42, color: 'rgba(243,253,2,1.0)', z: 442 },
-            { layer: 'layer_Rota2_43', json: json_Rota2_43, color: 'rgba(251,110,2,1.0)', z: 443 },
-            { layer: 'layer_Rota1_44', json: json_Rota1_44, color: 'rgba(150,252,27,1.0)', z: 444 }
-        ];
-
-        var rotasLayers = {};
-        rotasConfigs.forEach(function(cfg) {
-            map.createPane('pane_' + cfg.layer);
-            map.getPane('pane_' + cfg.layer).style.zIndex = cfg.z;
-            map.getPane('pane_' + cfg.layer).style['mix-blend-mode'] = 'normal';
-            
-            var l = new L.geoJson(cfg.json, {
-                attribution: '',
-                interactive: true,
-                pane: 'pane_' + cfg.layer,
-                onEachFeature: pop_RotaGeral,
-                style: function() {
-                    return {
-                        pane: 'pane_' + cfg.layer,
-                        opacity: 1,
-                        color: cfg.color,
-                        weight: 3.0,
-                        fillOpacity: 0,
-                        interactive: true
-                    };
-                }
-            });
-            bounds_group.addLayer(l);
-            rotasLayers[cfg.layer] = l;
-        });
-
-        var layer_Rota5MTBGRAVEL_16 = rotasLayers['layer_Rota5MTBGRAVEL_16'];
-        var layer_Rota4MTBGRAVEL_17 = rotasLayers['layer_Rota4MTBGRAVEL_17'];
-        var layer_Rota3MTBGRAVEL_18 = rotasLayers['layer_Rota3MTBGRAVEL_18'];
-        var layer_Rota2MTBGRAVEL_19 = rotasLayers['layer_Rota2MTBGRAVEL_19'];
-        var layer_Rota1MTBGRAVEL_20 = rotasLayers['layer_Rota1MTBGRAVEL_20'];
-        var layer_Rota5MTBGRAVEL_21 = rotasLayers['layer_Rota5MTBGRAVEL_21'];
-        var layer_Rota4MTBGRAVEL_22 = rotasLayers['layer_Rota4MTBGRAVEL_22'];
-        var layer_Rota3MTBGRAVELROAD_23 = rotasLayers['layer_Rota3MTBGRAVELROAD_23'];
-        var layer_Rota2MTBGRAVELROAD_24 = rotasLayers['layer_Rota2MTBGRAVELROAD_24'];
-        var layer_Rota1MTBGRAVEL_25 = rotasLayers['layer_Rota1MTBGRAVEL_25'];
-        var layer_Rota6MTBGRAVELROAD_26 = rotasLayers['layer_Rota6MTBGRAVELROAD_26'];
-        var layer_Rota5MTBGRAVEL_27 = rotasLayers['layer_Rota5MTBGRAVEL_27'];
-        var layer_Rota4MTBGRAVELROAD_28 = rotasLayers['layer_Rota4MTBGRAVELROAD_28'];
-        var layer_Rota3MTBGRAVELROAD_29 = rotasLayers['layer_Rota3MTBGRAVELROAD_29'];
-        var layer_Rota2MTBGRAVEL_30 = rotasLayers['layer_Rota2MTBGRAVEL_30'];
-        var layer_Rota1MTBGRAVEL_31 = rotasLayers['layer_Rota1MTBGRAVEL_31'];
-        var layer_Rota7MTBGRAVEL_32 = rotasLayers['layer_Rota7MTBGRAVEL_32'];
-        var layer_Rota6MTBGRAVEL_33 = rotasLayers['layer_Rota6MTBGRAVEL_33'];
-        var layer_Rota5MTBGRAVEL_34 = rotasLayers['layer_Rota5MTBGRAVEL_34'];
-        var layer_Rota4MTBGRAVEL_35 = rotasLayers['layer_Rota4MTBGRAVEL_35'];
-        var layer_Rota3MTBGRAVEL_36 = rotasLayers['layer_Rota3MTBGRAVEL_36'];
-        var layer_Rota2MTBGRAVELROAD_37 = rotasLayers['layer_Rota2MTBGRAVELROAD_37'];
-        var layer_Rota1MTBGRAVEL_38 = rotasLayers['layer_Rota1MTBGRAVEL_38'];
-        var layer_Rota6_39 = rotasLayers['layer_Rota6_39'];
-        var layer_Rota5_40 = rotasLayers['layer_Rota5_40'];
-        var layer_Rota4_41 = rotasLayers['layer_Rota4_41'];
-        var layer_Rota3_42 = rotasLayers['layer_Rota3_42'];
-        var layer_Rota2_43 = rotasLayers['layer_Rota2_43'];
-        var layer_Rota1_44 = rotasLayers['layer_Rota1_44'];
-
-        const url = {"Nominatim OSM": "https://nominatim.openstreetmap.org/search?format=geojson&addressdetails=1&",
-        "France BAN": "https://api-adresse.data.gouv.fr/search/?"}
-        var photonControl = L.control.photon({
-            url: url["Nominatim OSM"],
-            feedbackLabel: '',
-            position: 'topleft',
-            includePosition: true,
-            initial: true,
-        }).addTo(map);
-        photonControl._container.childNodes[0].style.borderRadius="10px"
-        var x = null;
-        var marker = null;
-        var z = null;
-        photonControl.on('selected', function(e) {
-            if (x != null) {
-                map.removeLayer(obj3.marker);
-                map.removeLayer(x);
-            }
-            obj2.gcd = e.choice;
-            x = L.geoJSON(obj2.gcd).addTo(map);
-            var label = typeof obj2.gcd.properties.label === 'undefined' ? obj2.gcd.properties.display_name : obj2.gcd.properties.label;
-            obj3.marker = L.marker(x.getLayers()[0].getLatLng()).bindPopup(label).addTo(map);
-            map.setView(x.getLayers()[0].getLatLng(), 17);
-            z = typeof e.choice.properties.label === 'undefined'? e.choice.properties.display_name : e.choice.properties.label;
-            e.target.input.value = z;
-        });
-        var search = document.getElementsByClassName("leaflet-photon leaflet-control")[0];
-        search.classList.add("leaflet-control-search")
-        search.style.display = "flex";
-        search.style.backgroundColor="rgba(255,255,255,0.5)" 
-
-        var button = document.createElement("div");
-        button.id = "gcd-button-control";
-        button.className = "gcd-gl-btn fa fa-search search-button";
-        search.insertBefore(button, search.firstChild);
-        last = search.lastChild;
-        last.style.display = "none";
-        button.addEventListener("click", function (e) {
-            if (last.style.display === "none") {
-                last.style.display = "block";
-            } else {
-                last.style.display = "none";
-            }
-        });
-
-        /* --- LEGENDA DAS CAMADAS (OVERLAYSTREE) --- */
-        var overlaysTree = [
-        {label: '<b>Pedal Iniciante 5 a 10km Todo Modal</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: '<img src="legend/Rota1_44.png" /> Rota 1', layer: layer_Rota1_44},
-            {label: '<img src="legend/Rota2_43.png" /> Rota 2', layer: layer_Rota2_43},
-            {label: '<img src="legend/Rota3_42.png" /> Rota 3', layer: layer_Rota3_42},
-            {label: '<img src="legend/Rota4_41.png" /> Rota 4', layer: layer_Rota4_41},
-            {label: '<img src="legend/Rota5_40.png" /> Rota 5', layer: layer_Rota5_40},
-            {label: '<img src="legend/Rota6_39.png" /> Rota 6', layer: layer_Rota6_39},]},
-        {label: '<b>Pedal Intermediário Leve 15 a 30km</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: '<img src="legend/Rota1MTBGRAVEL_38.png" /> Rota 1 MTB/GRAVEL', layer: layer_Rota1MTBGRAVEL_38},
-            {label: '<img src="legend/Rota2MTBGRAVELROAD_37.png" /> Rota 2 MTB/GRAVEL/ROAD', layer: layer_Rota2MTBGRAVELROAD_37},
-            {label: '<img src="legend/Rota3MTBGRAVEL_36.png" /> Rota 3 MTB/GRAVEL', layer: layer_Rota3MTBGRAVEL_36},
-            {label: '<img src="legend/Rota4MTBGRAVEL_35.png" /> Rota 4 MTB/GRAVEL', layer: layer_Rota4MTBGRAVEL_35},
-            {label: '<img src="legend/Rota5MTBGRAVEL_34.png" /> Rota 5 MTB/GRAVEL', layer: layer_Rota5MTBGRAVEL_34},
-            {label: '<img src="legend/Rota6MTBGRAVEL_33.png" /> Rota 6 MTB/GRAVEL', layer: layer_Rota6MTBGRAVEL_33},
-            {label: '<img src="legend/Rota7MTBGRAVEL_32.png" /> Rota 7 MTB/GRAVEL', layer: layer_Rota7MTBGRAVEL_32},]},
-        {label: '<b>Pedal Intermediário Moderado 30 a 50km</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: '<img src="legend/Rota1MTBGRAVEL_31.png" /> Rota 1 MTB/GRAVEL', layer: layer_Rota1MTBGRAVEL_31},
-            {label: '<img src="legend/Rota2MTBGRAVEL_30.png" /> Rota 2 MTB/GRAVEL', layer: layer_Rota2MTBGRAVEL_30},
-            {label: '<img src="legend/Rota3MTBGRAVELROAD_29.png" /> Rota 3 MTB/GRAVEL/ROAD', layer: layer_Rota3MTBGRAVELROAD_29},
-            {label: '<img src="legend/Rota4MTBGRAVELROAD_28.png" /> Rota 4 MTB/GRAVEL/ROAD', layer: layer_Rota4MTBGRAVELROAD_28},
-            {label: '<img src="legend/Rota5MTBGRAVEL_27.png" /> Rota 5 MTB/GRAVEL', layer: layer_Rota5MTBGRAVEL_27},
-            {label: '<img src="legend/Rota6MTBGRAVELROAD_26.png" /> Rota 6 MTB/GRAVEL/ROAD', layer: layer_Rota6MTBGRAVELROAD_26},]},
-        {label: '<b>Pedal Avançado 50 a 80km</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: '<img src="legend/Rota1MTBGRAVEL_25.png" /> Rota 1 MTB/GRAVEL', layer: layer_Rota1MTBGRAVEL_25},
-            {label: '<img src="legend/Rota2MTBGRAVELROAD_24.png" /> Rota 2 MTB/GRAVEL/ROAD', layer: layer_Rota2MTBGRAVELROAD_24},
-            {label: '<img src="legend/Rota3MTBGRAVELROAD_23.png" /> Rota 3 MTB/GRAVEL/ROAD', layer: layer_Rota3MTBGRAVELROAD_23},
-            {label: '<img src="legend/Rota4MTBGRAVEL_22.png" /> Rota 4 MTB/GRAVEL', layer: layer_Rota4MTBGRAVEL_22},
-            {label: '<img src="legend/Rota5MTBGRAVEL_21.png" /> Rota 5 MTB/GRAVEL', layer: layer_Rota5MTBGRAVEL_21},]},
-        {label: '<b>Pedal Expert +80km</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: '<img src="legend/Rota1MTBGRAVEL_20.png" /> Rota 1 MTB/GRAVEL', layer: layer_Rota1MTBGRAVEL_20},
-            {label: '<img src="legend/Rota2MTBGRAVEL_19.png" /> Rota 2 MTB/GRAVEL', layer: layer_Rota2MTBGRAVEL_19},
-            {label: '<img src="legend/Rota3MTBGRAVEL_18.png" /> Rota 3 MTB/GRAVEL', layer: layer_Rota3MTBGRAVEL_18},
-            {label: '<img src="legend/Rota4MTBGRAVEL_17.png" /> Rota 4 MTB/GRAVEL', layer: layer_Rota4MTBGRAVEL_17},
-            {label: '<img src="legend/Rota5MTBGRAVEL_16.png" /> Rota 5 MTB/GRAVEL', layer: layer_Rota5MTBGRAVEL_16},]},
-        {label: '<b>Pedal ROAD (Speed)</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: '<img src="legend/RedeViriaPavimentada_15.png" /> Rede Viária Pavimentada', layer: layer_RedeViriaPavimentada_15},
-            {label: '<i class="fas fa-stopwatch" style="color: #fb9808; margin-right: 5px; font-size: 13px;"></i> Velódromos', layer: layer_Veldromos_14},]},
-        {label: '<b>CICLOVIAGEM</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: '<img src="legend/VoltaLagoaMirim_13.png" /> Volta Lagoa Mirim', layer: layer_VoltaLagoaMirim_13},
-            {label: '<img src="legend/VoltaLagunadosPatos_12.png" /> Volta Laguna dos Patos', layer: layer_VoltaLagunadosPatos_12},
-            {label: '<img src="legend/CassinoxBarraChuFaixalitornea_11.png" /> Cassino x Barra Chuí (Faixa litorânea)', layer: layer_CassinoxBarraChuFaixalitornea_11},]},
-            {label: '<i class="fas fa-fire" style="color: #fb9808; margin-right: 5px; font-size: 13px;"></i> Pistas BMX/ DIRTY/ PARK', layer: layer_PistasBMXDIRTYPARK_10},
-        {label: '<b>Ciclo Mobilidade</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: '<img src="legend/CICLOFAIXAS_9.png" /> CICLOFAIXAS', layer: layer_CICLOFAIXAS_9},
-            {label: '<img src="legend/CICLOVIAS_8.png" /> CICLOVIAS', layer: layer_CICLOVIAS_8},
-            {label: '<img src="legend/COMPARTILHADO_7.png" /> COMPARTILHADO', layer: layer_COMPARTILHADO_7},]},
-        {label: '<b>POIS</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: '<i class="fas fa-shield-alt" style="color: #c0392b; margin-right: 5px;"></i> Segurança/Emergência', layer: layer_SeguranaEmergncia_6},
-            {label: '<i class="fas fa-wrench" style="color: #34495e; margin-right: 5px;"></i> Lojas/Oficinas', layer: layer_LojasOficinas_5},
-            {label: '<i class="fas fa-camera" style="color: #2980b9; margin-right: 5px;"></i> Atrações Urbanas', layer: layer_AtraesUrbanas_4},
-            {label: '<i class="fas fa-camera" style="color: #27ae60; margin-right: 5px;"></i> Atrações Rurais', layer: layer_AtraesRurais_3},]},
-            {label: "PERFIL ALTIMÉTRICO", layer: layer_PERFILALTIMTRICO_2},
-        {label: '<b>MAPAS_BASE</b>', collapsed: true, selectAllCheckbox: true, children: [
-            {label: "Google Satellite", layer: layer_GoogleSatellite_1},
-            {label: "Google Hybrid", layer: layer_GoogleHybrid_0},]},]
-        var lay = L.control.layers.tree(null, overlaysTree,{
-            collapsed: true,
-        });
-        lay.addTo(map);
-
-        /* --- RECOLHIMENTO AUTOMÁTICO DO PAINEL DE CAMADAS NO MOBILE --- */
-        document.addEventListener('change', function(e) {
-            if (e.target.closest('.leaflet-control-layers')) {
-                setTimeout(function() {
-                    if (lay && typeof lay.collapse === 'function') {
-                        lay.collapse();
-                    }
-                }, 250);
-            }
-        });
-
-        setBounds();
-        L.ImageOverlay.include({
-            getBounds: function () {
-                return this._bounds;
-            }
-        });
-<script>
         /* --- CONTROLE DINÂMICO DA LEGENDA DE ALTIMETRIA --- */
         map.on("layeradd", function(e){
             if (e.layer === layer_PERFILALTIMTRICO_2) {
@@ -1017,36 +546,30 @@
             }
         });
         </script>
-    
-        <!-- Modal para Ampliar a Logo na tela -->
-    <div id="modalLogo" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; cursor:zoom-out;">
-        <img id="imgModal" src="" style="max-width:90%; max-height:90%; border-radius:8px; box-shadow: 0 5px 25px rgba(0,0,0,0.5);">
-    </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var logo = document.querySelector('img[src*="geo_pedal_rg"]');
-            var modal = document.getElementById('modalLogo');
-            var modalImg = document.getElementById('imgModal');
+        <!-- Modal para Ampliar a Logo no Telemóvel -->
+        <div id="modalLogo" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); align-items:center; justify-content:center; cursor:pointer;">
+            <img id="imgModal" src="" style="width: 95%; max-width: 500px; height: auto; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.8);">
+        </div>
 
-            if (logo && modal) {
-                // Torna a logo clicável
-                logo.style.cursor = "zoom-in";
-                
-                // Ao tocar na logo, abre o modal em tela cheia
-                logo.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    modal.style.display = "flex";
-                    modalImg.src = logo.src;
-                });
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var logo = document.querySelector('.floating-logo img');
+                var modal = document.getElementById('modalLogo');
+                var modalImg = document.getElementById('imgModal');
 
-                // Ao tocar em qualquer lugar do modal, ele fecha
-                modal.addEventListener('click', function() {
-                    modal.style.display = "none";
-                });
-            }
-        });
-        </script>        
-    
-</body>
+                if (logo && modal) {
+                    logo.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        modal.style.display = "flex";
+                        modalImg.src = logo.src;
+                    });
+
+                    modal.addEventListener('click', function() {
+                        modal.style.display = "none";
+                    });
+                }
+            });
+        </script>
+    </body>
 </html>
