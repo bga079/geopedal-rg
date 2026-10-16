@@ -1016,6 +1016,36 @@
                 document.getElementById('altimetryLegend').style.display = 'none';
             }
         });
+
+    <!-- Modal para Ampliar a Logo no Telemóvel -->
+    <div id="modalLogo" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; cursor:zoom-out;">
+        <img id="imgModal" src="" style="max-width:90%; max-height:90%; border-radius:8px; box-shadow: 0 5px 25px rgba(0,0,0,0.5);">
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var logo = document.querySelector('img[src*="geo_pedal_rg"]');
+            var modal = document.getElementById('modalLogo');
+            var modalImg = document.getElementById('imgModal');
+
+            if (logo && modal) {
+                // Torna a logo clicável
+                logo.style.cursor = "zoom-in";
+                
+                // Ao tocar na logo, abre o modal em tela cheia
+                logo.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    modal.style.display = "flex";
+                    modalImg.src = logo.src;
+                });
+
+                // Ao tocar em qualquer lugar do modal, ele fecha
+                modal.addEventListener('click', function() {
+                    modal.style.display = "none";
+                });
+            }
+        });
         </script>        
-    </body>
+    
+</body>
 </html>
