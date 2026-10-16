@@ -181,16 +181,19 @@
     .leaflet-interactive {
         stroke-width: 7px !important;
     }
-/* Responsividade perfeita para o logotipo em dispositivos móveis */
+
+            /* Logótipo com tamanho ideal e total interatividade para zoom/clique */
     img[src*="geo_pedal_rg"], .logo-img {
-        max-width: 100px !important;
+        max-width: 150px !important;
+        width: 100% !important;
         height: auto !important;
-        display: block;
+        cursor: pointer;
+        pointer-events: auto !important;
     }
 
     @media (max-width: 768px) {
         img[src*="geo_pedal_rg"], .logo-img {
-            max-width: 80px !important; /* Reduz ligeiramente em telas de telemóvel */
+            max-width: 120px !important; /* Tamanho maior e confortável no telemóvel */
         }
     }
             
