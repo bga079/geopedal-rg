@@ -1065,6 +1065,64 @@
             }
         })();
     </script>
-      
+      <!-- Modal para Ampliar a Logo com Zoom Desbloqueado -->
+    <div id="modalLogo" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); align-items:center; justify-content:center; cursor:pointer;">
+        <img id="imgModal" src="" style="max-width:90%; max-height:90%; border-radius:8px; box-shadow: 0 5px 25px rgba(0,0,0,0.8); transition: transform 0.3s ease; cursor: zoom-in;">
+    </div>
+
+    <script>
+        (function() {
+            var logo = document.querySelector('.floating-logo img') || document.querySelector('img[src*="geo_pedal_rg"]');
+            var modal = document.getElementById('modalLogo');
+            var modalImg = document.getElementById('imgModal');
+
+            if (logo && modal && modalImg) {
+                var isZoomed = false;
+                
+                // Ao tocar na logo do mapa, abre o modal e libera o zoom da página temporariamente se necessário
+                logo.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    isZoomed = false;
+                    modalImg.style.transform = "scale(1)";
+                    modalImg.style.cursor = "zoom-in";
+                    modal.style.display = "flex";
+                    modalImg.src = logo.src;
+                    
+                    // Garante que o viewport aceite toque na imagem
+                    var viewportMeta = document.querySelector('meta[name="viewport"]');
+                    if (viewportMeta) {
+                        viewportMeta.setAttribute('content', 'initial-scale=1,maximum-scale=5.0,user-scalable=yes,width=device-width');
+                    }
+                });
+
+                // Ao tocar na imagem dentro do modal, dá zoom instantâneo de 2.5x
+                modalImg.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Impede que o clique feche o modal
+                    if (!isZoomed) {
+                        modalImg.style.transform = "scale(2.5)";
+                        modalImg.style.cursor = "zoom-out";
+                        isZoomed = true;
+                    } else {
+                        modalImg.style.transform = "scale(1)";
+                        modalImg.style.cursor = "zoom-in";
+                        isZoomed = false;
+                    }
+                });
+
+                // Ao tocar no fundo escuro (fora da imagem), fecha o modal
+                modal.addEventListener('click', function() {
+                    modal.style.display = "none";
+                    isZoomed = false;
+                    modalImg.style.transform = "scale(1)";
+                    
+                    // Restaura o viewport original para o mapa funcionar perfeitamente
+                    var viewportMeta = document.querySelector('meta[name="viewport"]');
+                    if (viewportMeta) {
+                        viewportMeta.setAttribute('content', 'initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width');
+                    }
+                });
+            }
+        })();
+    </script>
     </body>
 </html>
