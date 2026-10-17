@@ -1125,61 +1125,55 @@
         })();
     </script>
 
-<!-- Script Automático para Corrigir Nomes de Imagens nos Popups do Leaflet -->
+<!-- Script de Correção Mapeada das Imagens dos Popups -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Função para transformar nomes com espaços/maiúsculas no padrão da pasta images
-            function fixPopupImages(container) {
-                if (!container) return;
-                const images = container.querySelectorAll('img');
-                images.forEach(function(img) {
-                    let src = img.getAttribute('src');
-                    if (!src || img.dataset.fixed === "true") return;
-                    
-                    // Separa o diretório (ex: images/) do nome do arquivo
-                    let lastSlash = src.lastIndexOf('/');
-                    let dir = lastSlash !== -1 ? src.substring(0, lastSlash + 1) : 'images/';
-                    let filenameWithExt = lastSlash !== -1 ? src.substring(lastSlash + 1) : src;
-                    
-                    let lastDot = filenameWithExt.lastIndexOf('.');
-                    let filename = lastDot !== -1 ? filenameWithExt.substring(0, lastDot) : filenameWithExt;
-                    let ext = lastDot !== -1 ? filenameWithExt.substring(lastDot) : '';
-                    
-                    // Converte: "Molhes da Barra (Lado Oeste)" -> "molhes_da_barra_lado_oeste"
-                    let fixedFilename = filename
-                        .toLowerCase()
-                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove acentos se houver
-                        .replace(/[()]/g, "") // remove parênteses
-                        .trim()
-                        .replace(/\s+/g, "_"); // substitui espaços por underscores
-                        
-                    let newSrc = dir + fixedFilename + ext;
-                    
-                    // Aplica o caminho corrigido
-                    img.src = newSrc;
-                    img.dataset.fixed = "true"; // marca como corrigido para evitar loop
-                });
-            }
+        (function() {
+            // Mapeamento dos títulos da tabela de atributos para os nomes exatos na pasta images/
+            var mapaImagens = {
+                "Molhes da Barra (Lado Oeste)": "images/molhes_da_barra_lado_oeste.jpg",
+                "Museu Sacro": "images/museu_sacro.jpg",
+                "Museu Oceanográfico": "images/museu_oceanografico.jpg"
+            };
 
-            // Monitora quando qualquer popup do mapa for aberto
-            if (typeof map !== 'undefined' && map.on) {
-                map.on('popupopen', function(e) {
-                    fixPopupImages(e.popup.getElement());
-                });
-            }
-
-            // Fallback global via MutationObserver caso o popup abra de outra forma
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    mutation.addedNodes.forEach(function(node) {
-                        if (node.nodeType === 1 && node.classList && node.classList.contains('leaflet-popup')) {
-                            fixPopupImages(node);
+            function corrigirPopups() {
+                var popups = document.querySelectorAll('.leaflet-popup-content');
+                popups.forEach(function(popup) {
+                    var textoHtml = popup.innerHTML;
+                    
+                    // Verifica se o popup contém algum dos pontos mapeados
+                    for (var titulo in mapaImagens) {
+                        if (textoHtml.indexOf(titulo) !== -1) {
+                            var img = popup.querySelector('img');
+                            var caminhoCerto = mapaImagens[titulo];
+                            
+                            if (img) {
+                                img.src = caminhoCerto;
+                            } else {
+                                // Se o QGIS não criou a tag <img>, nós inserimos diretamente no popup
+                                var containerImg = document.createElement('div');
+                                containerImg.style.marginTop = "8px";
+                                containerImg.style.textAlign = "center";
+                                containerImg.innerHTML = '<img src="' + caminhoCerto + '" style="max-width:100%; height:auto; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.2);">';
+                                popup.appendChild(containerImg);
+                            }
                         }
-                    });
+                    }
                 });
+            }
+
+            // Monitora quando qualquer popup do Leaflet abre
+            if (typeof map !== 'undefined' && map.on) {
+                map.on('popupopen', function() {
+                    setTimeout(corrigirPopups, 50);
+                });
+            }
+
+            // Garante a verificação via observador de mutação do DOM
+            var observer = new MutationObserver(function() {
+                corrigirPopups();
             });
             observer.observe(document.body, { childList: true, subtree: true });
-        });
+        })();
     </script>
         
     </body>
