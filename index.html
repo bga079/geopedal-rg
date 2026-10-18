@@ -1132,49 +1132,81 @@
         }
     </style>
 
-        <!-- Script de Substituição Precisa e Isolada de Imagens em Popups -->
+        <!-- Script Híbrido Definitivo para Correção de Imagens em Popups -->
     <script>
         (function() {
-            // Dicionário: Texto contido no popup -> Arquivo correto na pasta images/
-            var regrasImagens = [
-                { busca: "Molhes da Barra", arquivo: "images/molhes_da_barra_lado_oeste.jpg" },
-                { busca: "Museu Sacro", arquivo: "images/museu_sacro.jpg" },
-                { busca: "Museu Oceanográfico", arquivo: "images/museu_oceanografico.jpg" }
-            ];
+            // Mapeamento direto e exato para os pontos principais
+            var mapaExato = {
+                "Molhes da Barra": "images/molhes_da_barra_lado_oeste.jpg",
+                "Museu Sacro": "images/museu_sacro.jpg",
+                "Museu Oceanográfico": "images/museu_oceanografico.jpg",
+                "Ponte dos Franceses": "images/ponte_dos_franceses.png"
+            };
 
-            function CorrigirPopupAtual() {
-                var popups = document.querySelectorAll('.leaflet-popup-content');
+            function normalizarNome(str) {
+                return str
+                    .toLowerCase()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[()]/g, "")
+                    .trim()
+                    .replace(/\s+/g, "_");
+            }
+
+            function corrigirPopups() {
+                var popups = document.querySelectorAll('.leaflet-popup');
                 popups.forEach(function(popup) {
                     var html = popup.innerHTML;
+                    var img = popup.querySelector('img');
+                    if (!img) return;
 
-                    // Verifica se o popup aberto pertence a um dos nossos pontos específicos
-                    regrasImagens.forEach(function(regra) {
-                        if (html.indexOf(regra.busca) !== -1) {
-                            var imgExistente = popup.querySelector('img');
-                            
-                            // Se a imagem ainda não foi corrigida para este ponto específico
-                            if (imgExistente && imgExistente.dataset.pontoCorrigido !== regra.busca) {
-                                imgExistente.src = regra.arquivo;
-                                imgExistente.dataset.pontoCorrigido = regra.busca;
-                                imgExistente.style.maxWidth = "100%";
-                                imgExistente.style.height = "auto";
-                                imgExistente.style.borderRadius = "6px";
-                                imgExistente.style.display = "block";
-                                imgExistente.style.margin = "8px auto 0 auto";
+                    var caminhoDefinitivo = null;
+
+                    // 1. Procura se o popup aberto corresponde a um dos pontos mapeados
+                    for (var termo in mapaExato) {
+                        if (html.indexOf(termo) !== -1) {
+                            caminhoDefinitivo = mapaExato[termo];
+                            break;
+                        }
+                    }
+
+                    // 2. Se não estiver no mapa exato, aplica a regra universal limpa
+                    if (!caminhoDefinitivo) {
+                        var srcOriginal = img.getAttribute('src');
+                        if (srcOriginal && srcOriginal.indexOf('images/') !== -1) {
+                            var partes = srcOriginal.split('/');
+                            var nomeComExt = partes[partes.length - 1];
+                            var pontoIndex = nomeComExt.lastIndexOf('.');
+                            if (pontoIndex !== -1) {
+                                var nome = nomeComExt.substring(0, pontoIndex);
+                                var ext = nomeComExt.substring(pontoIndex).toLowerCase(); // força extensão minúscula (.jpg/.png)
+                                caminhoDefinitivo = 'images/' + normalizarNome(nome) + ext;
                             }
                         }
-                    });
+                    }
+
+                    // Aplica o caminho correto se encontrado
+                    if (caminhoDefinitivo) {
+                        img.src = caminhoDefinitivo;
+                    }
+
+                    // Padroniza o visual responsivo de todas as imagens nos popups
+                    img.style.maxWidth = "100%";
+                    img.style.height = "auto";
+                    img.style.borderRadius = "6px";
+                    img.style.display = "block";
+                    img.style.margin = "8px auto 0 auto";
                 });
             }
 
             if (typeof map !== 'undefined' && map.on) {
                 map.on('popupopen', function() {
-                    setTimeout(CorrigirPopupAtual, 50);
+                    setTimeout(corrigirPopups, 50);
+                    setTimeout(corrigirPopups, 200); // Dupla checagem para evitar atrasos de renderização
                 });
             }
 
             var observer = new MutationObserver(function() {
-                CorrigirPopupAtual();
+                corrigirPopups();
             });
             observer.observe(document.body, { childList: true, subtree: true });
         })();
