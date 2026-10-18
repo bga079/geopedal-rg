@@ -1132,68 +1132,66 @@
         }
     </style>
 
-        <!-- Script Anti-Reciclagem Definitivo para Popups do Leaflet -->
+        <!-- Script Cirúrgico de Atributos Exatos para Popups do Leaflet -->
     <script>
         (function() {
-            // Mapeamento exato de quem tem imagem personalizada
+            // Mapeamento exato do nome que vem na tabela de atributos do QGIS
             var mapaExato = {
+                "Molhes da Barra (Lado Oeste)": "images/molhes_da_barra_lado_oeste.jpg",
                 "Molhes da Barra": "images/molhes_da_barra_lado_oeste.jpg",
                 "Museu Sacro": "images/museu_sacro.jpg",
                 "Museu Oceanográfico": "images/museu_oceanografico.jpg",
                 "Ponte dos Franceses": "images/ponte_dos_franceses.png"
             };
 
+            var ultimaImagemProcessada = null;
+
             function tratarPopup(popupEl) {
                 if (!popupEl) return;
-                var html = popupEl.innerHTML;
                 var img = popupEl.querySelector('img');
-                
                 if (!img) return;
 
-                // 1. PASSO CRUCIAL: Zera a imagem imediatamente para evitar herdar o ponto anterior (Efeito Fantasma)
-                img.src = "";
-
+                // 1. Procura estritamente nas células da tabela de atributos do QGIS (<td>)
+                var celulas = popupEl.querySelectorAll('td');
                 var caminhoDefinitivo = null;
 
-                // 2. Procura se o texto atual pertence a um dos nossos pontos mapeados
-                for (var termo in mapaExato) {
-                    if (html.indexOf(termo) !== -1) {
-                        caminhoDefinitivo = mapaExato[termo];
+                for (var i = 0; i < celulas.length; i++) {
+                    var textoCelula = celulas[i].textContent.trim();
+                    if (mapaExato[textoCelula]) {
+                        caminhoDefinitivo = mapaExato[textoCelula];
                         break;
                     }
                 }
 
-                // 3. Se achou o ponto mapeado, aplica a imagem correta. Se não, tenta o padrão do QGIS de forma limpa.
+                // 2. Se encontrou o ponto exato na tabela, aplica a imagem correspondente
                 if (caminhoDefinitivo) {
-                    img.style.display = "block";
                     img.src = caminhoDefinitivo;
+                    img.style.display = "block";
                 } else {
-                    // Para outros pontos normais do mapa que o QGIS gerou
-                    var srcOriginal = img.getAttribute('data-original-src') || img.src;
-                    if (srcOriginal && srcOriginal.indexOf('images/') !== -1 && srcOriginal !== window.location.href) {
-                        img.src = srcOriginal;
+                    // Se for qualquer outro ponto do QGIS, mantém a imagem original gerada por ele
+                    var srcOriginal = img.getAttribute('data-original-src');
+                    if (!srcOriginal && img.src && img.src.indexOf('images/') !== -1) {
+                        img.setAttribute('data-original-src', img.src);
                     }
                 }
 
-                // Padronização visual garantida
+                // Padronização visual responsiva para todas as imagens
                 img.style.maxWidth = "100%";
                 img.style.height = "auto";
                 img.style.borderRadius = "6px";
                 img.style.margin = "8px auto 0 auto";
             }
 
-            // Monitora a abertura de popups do Leaflet
+            // Monitora a abertura de popups
             if (typeof map !== 'undefined' && map.on) {
                 map.on('popupopen', function(e) {
-                    // Executa na hora e reforça após 50ms para garantir que o Leaflet montou o DOM
-                    tratarPopup(e.popup.getElement());
-                    setTimeout(function() {
-                        tratarPopup(e.popup.getElement());
-                    }, 50);
+                    var el = e.popup.getElement();
+                    tratarPopup(el);
+                    setTimeout(function() { tratarPopup(el); }, 50);
                 });
             }
 
-            // Observador de mutações global para segurança total
+            // Observador de mutações para quando ligar/desligar camadas
             var observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     mutation.addedNodes.forEach(function(node) {
