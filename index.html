@@ -1131,56 +1131,53 @@
             display: none !important;
         }
     </style>
-    
-        <!-- Script de Substituição Direta e Precisa para Popups -->
+
+        <!-- Script de Substituição Precisa e Isolada de Imagens em Popups -->
     <script>
         (function() {
-            // Mapeamento exato: Texto do popup -> Caminho da imagem na pasta images/
-            var mapaImagens = {
-                "Molhes da Barra": "images/molhes_da_barra_lado_oeste.jpg",
-                "Museu Sacro": "images/museu_sacro.jpg",
-                "Museu Oceanográfico": "images/museu_oceanografico.jpg",
-                "Ponte dos Franceses": "images/ponte_dos_franceses.jpg"
-            };
+            // Dicionário: Texto contido no popup -> Arquivo correto na pasta images/
+            var regrasImagens = [
+                { busca: "Molhes da Barra", arquivo: "images/molhes_da_barra_lado_oeste.jpg" },
+                { busca: "Museu Sacro", arquivo: "images/museu_sacro.jpg" },
+                { busca: "Museu Oceanográfico", arquivo: "images/museu_oceanografico.jpg" }
+            ];
 
-            function aplicarImagensCorrecao() {
+            function CorrigirPopupAtual() {
                 var popups = document.querySelectorAll('.leaflet-popup-content');
                 popups.forEach(function(popup) {
-                    var htmlContent = popup.innerHTML;
-                    var imagemEncontrada = false;
+                    var html = popup.innerHTML;
 
-                    // Procura qual ponto corresponde ao popup aberto
-                    for (var termo in mapaImagens) {
-                        if (htmlContent.indexOf(termo) !== -1) {
-                            imagemEncontrada = true;
-                            var caminhoCerto = mapaImagens[termo];
-                            var img = popup.querySelector('img');
-
-                            if (img) {
-                                img.src = caminhoCerto;
-                                img.style.maxWidth = "100%";
-                                img.style.height = "auto";
-                                img.style.borderRadius = "6px";
-                                img.style.display = "block";
-                                img.style.margin = "8px auto 0 auto";
+                    // Verifica se o popup aberto pertence a um dos nossos pontos específicos
+                    regrasImagens.forEach(function(regra) {
+                        if (html.indexOf(regra.busca) !== -1) {
+                            var imgExistente = popup.querySelector('img');
+                            
+                            // Se a imagem ainda não foi corrigida para este ponto específico
+                            if (imgExistente && imgExistente.dataset.pontoCorrigido !== regra.busca) {
+                                imgExistente.src = regra.arquivo;
+                                imgExistente.dataset.pontoCorrigido = regra.busca;
+                                imgExistente.style.maxWidth = "100%";
+                                imgExistente.style.height = "auto";
+                                imgExistente.style.borderRadius = "6px";
+                                imgExistente.style.display = "block";
+                                imgExistente.style.margin = "8px auto 0 auto";
                             }
-                            break; // Encontrou o ponto correto, para a busca para não sobrescrever
                         }
-                    }
+                    });
                 });
             }
 
             if (typeof map !== 'undefined' && map.on) {
                 map.on('popupopen', function() {
-                    setTimeout(aplicarImagensCorrecao, 80);
+                    setTimeout(CorrigirPopupAtual, 50);
                 });
             }
 
             var observer = new MutationObserver(function() {
-                aplicarImagensCorrecao();
+                CorrigirPopupAtual();
             });
             observer.observe(document.body, { childList: true, subtree: true });
         })();
     </script>
-            </body>
+                   </body>
 </html>
