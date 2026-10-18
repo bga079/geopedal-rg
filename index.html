@@ -1132,10 +1132,10 @@
         }
     </style>
 
-        <!-- Script Híbrido Definitivo para Correção de Imagens em Popups -->
+        <!-- Script Anti-Reciclagem Definitivo para Popups do Leaflet -->
     <script>
         (function() {
-            // Mapeamento direto e exato para os pontos principais
+            // Mapeamento exato de quem tem imagem personalizada
             var mapaExato = {
                 "Molhes da Barra": "images/molhes_da_barra_lado_oeste.jpg",
                 "Museu Sacro": "images/museu_sacro.jpg",
@@ -1143,70 +1143,68 @@
                 "Ponte dos Franceses": "images/ponte_dos_franceses.png"
             };
 
-            function normalizarNome(str) {
-                return str
-                    .toLowerCase()
-                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                    .replace(/[()]/g, "")
-                    .trim()
-                    .replace(/\s+/g, "_");
+            function tratarPopup(popupEl) {
+                if (!popupEl) return;
+                var html = popupEl.innerHTML;
+                var img = popupEl.querySelector('img');
+                
+                if (!img) return;
+
+                // 1. PASSO CRUCIAL: Zera a imagem imediatamente para evitar herdar o ponto anterior (Efeito Fantasma)
+                img.src = "";
+
+                var caminhoDefinitivo = null;
+
+                // 2. Procura se o texto atual pertence a um dos nossos pontos mapeados
+                for (var termo in mapaExato) {
+                    if (html.indexOf(termo) !== -1) {
+                        caminhoDefinitivo = mapaExato[termo];
+                        break;
+                    }
+                }
+
+                // 3. Se achou o ponto mapeado, aplica a imagem correta. Se não, tenta o padrão do QGIS de forma limpa.
+                if (caminhoDefinitivo) {
+                    img.style.display = "block";
+                    img.src = caminhoDefinitivo;
+                } else {
+                    // Para outros pontos normais do mapa que o QGIS gerou
+                    var srcOriginal = img.getAttribute('data-original-src') || img.src;
+                    if (srcOriginal && srcOriginal.indexOf('images/') !== -1 && srcOriginal !== window.location.href) {
+                        img.src = srcOriginal;
+                    }
+                }
+
+                // Padronização visual garantida
+                img.style.maxWidth = "100%";
+                img.style.height = "auto";
+                img.style.borderRadius = "6px";
+                img.style.margin = "8px auto 0 auto";
             }
 
-            function corrigirPopups() {
-                var popups = document.querySelectorAll('.leaflet-popup');
-                popups.forEach(function(popup) {
-                    var html = popup.innerHTML;
-                    var img = popup.querySelector('img');
-                    if (!img) return;
+            // Monitora a abertura de popups do Leaflet
+            if (typeof map !== 'undefined' && map.on) {
+                map.on('popupopen', function(e) {
+                    // Executa na hora e reforça após 50ms para garantir que o Leaflet montou o DOM
+                    tratarPopup(e.popup.getElement());
+                    setTimeout(function() {
+                        tratarPopup(e.popup.getElement());
+                    }, 50);
+                });
+            }
 
-                    var caminhoDefinitivo = null;
-
-                    // 1. Procura se o popup aberto corresponde a um dos pontos mapeados
-                    for (var termo in mapaExato) {
-                        if (html.indexOf(termo) !== -1) {
-                            caminhoDefinitivo = mapaExato[termo];
-                            break;
-                        }
-                    }
-
-                    // 2. Se não estiver no mapa exato, aplica a regra universal limpa
-                    if (!caminhoDefinitivo) {
-                        var srcOriginal = img.getAttribute('src');
-                        if (srcOriginal && srcOriginal.indexOf('images/') !== -1) {
-                            var partes = srcOriginal.split('/');
-                            var nomeComExt = partes[partes.length - 1];
-                            var pontoIndex = nomeComExt.lastIndexOf('.');
-                            if (pontoIndex !== -1) {
-                                var nome = nomeComExt.substring(0, pontoIndex);
-                                var ext = nomeComExt.substring(pontoIndex).toLowerCase(); // força extensão minúscula (.jpg/.png)
-                                caminhoDefinitivo = 'images/' + normalizarNome(nome) + ext;
+            // Observador de mutações global para segurança total
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            var popupEl = node.classList && node.classList.contains('leaflet-popup') ? node : (node.querySelector ? node.querySelector('.leaflet-popup') : null);
+                            if (popupEl) {
+                                tratarPopup(popupEl);
                             }
                         }
-                    }
-
-                    // Aplica o caminho correto se encontrado
-                    if (caminhoDefinitivo) {
-                        img.src = caminhoDefinitivo;
-                    }
-
-                    // Padroniza o visual responsivo de todas as imagens nos popups
-                    img.style.maxWidth = "100%";
-                    img.style.height = "auto";
-                    img.style.borderRadius = "6px";
-                    img.style.display = "block";
-                    img.style.margin = "8px auto 0 auto";
+                    });
                 });
-            }
-
-            if (typeof map !== 'undefined' && map.on) {
-                map.on('popupopen', function() {
-                    setTimeout(corrigirPopups, 50);
-                    setTimeout(corrigirPopups, 200); // Dupla checagem para evitar atrasos de renderização
-                });
-            }
-
-            var observer = new MutationObserver(function() {
-                corrigirPopups();
             });
             observer.observe(document.body, { childList: true, subtree: true });
         })();
