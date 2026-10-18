@@ -1125,65 +1125,67 @@
         })();
     </script>
 
-    <!-- Script Universal de Correção Automática de Imagens em Popups -->
+        <!-- Ocultar caixa de créditos/atribuição do canto inferior direito -->
+    <style>
+        .leaflet-control-attribution {
+            display: none !important;
+        }
+    </style>
+    
+        <!-- Script de Substituição Direta e Garantida para Popups -->
     <script>
         (function() {
-            function normalizarNome(str) {
-                return str
-                    .toLowerCase()
-                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove acentos
-                    .replace(/[()]/g, "") // remove parênteses
-                    .trim()
-                    .replace(/\s+/g, "_"); // substitui espaços por underscores
-            }
+            // Mapeamento: Texto que aparece no popup -> Caminho EXATO na pasta images/
+            var imagensFixas = [
+                { termo: "Molhes da Barra", caminho: "images/molhes_da_barra_lado_oeste.jpg" },
+                { termo: "Museu Sacro", caminho: "images/museu_sacro.jpg" },
+                { termo: "Museu Oceanográfico", caminho: "images/museu_oceanografico.jpg" }
+            ];
 
-            function corrigirImagens() {
-                var popups = document.querySelectorAll('.leaflet-popup');
+            function aplicarImagensCorrecao() {
+                var popups = document.querySelectorAll('.leaflet-popup-content');
                 popups.forEach(function(popup) {
-                    var imgs = popup.querySelectorAll('img');
-                    imgs.forEach(function(img) {
-                        var srcOriginal = img.getAttribute('src');
-                        if (!srcOriginal || img.dataset.corrigido === "sim") return;
+                    var htmlContent = popup.innerHTML;
 
-                        // Extrai apenas o nome do arquivo (ex: "Museu Sacro.jpg")
-                        var partes = srcOriginal.split('/');
-                        var nomeComExt = partes[partes.length - 1];
-                        
-                        var pontoIndex = nomeComExt.lastIndexOf('.');
-                        if (pontoIndex !== -1) {
-                            var nome = nomeComExt.substring(0, pontoIndex);
-                            var ext = nomeComExt.substring(pontoIndex).toLowerCase(); // força extensão minúscula (.jpg/.png)
+                    imagensFixas.forEach(function(item) {
+                        // Se o popup contiver o nome do Ponto Turístico
+                        if (htmlContent.indexOf(item.termo) !== -1) {
+                            var img = popup.querySelector('img');
                             
-                            var nomeLimpo = normalizarNome(nome);
-                            var novoCaminho = 'images/' + nomeLimpo + ext;
-                            
-                            img.src = novoCaminho;
-                            img.dataset.corrigido = "sim";
-                            
-                            // Padroniza o estilo visual para ficar elegante no popup
-                            img.style.maxWidth = "100%";
-                            img.style.height = "auto";
-                            img.style.borderRadius = "6px";
-                            img.style.display = "block";
-                            img.style.margin = "8px auto 0 auto";
+                            if (img) {
+                                img.src = item.caminho;
+                                img.style.maxWidth = "100%";
+                                img.style.height = "auto";
+                                img.style.borderRadius = "6px";
+                                img.style.display = "block";
+                                img.style.margin = "8px auto 0 auto";
+                            } else {
+                                // Se o QGIS não criou a tag img, criamos uma nova
+                                var novaImg = document.createElement('img');
+                                novaImg.src = item.caminho;
+                                novaImg.style.maxWidth = "100%";
+                                novaImg.style.height = "auto";
+                                novaImg.style.borderRadius = "6px";
+                                novaImg.style.display = "block";
+                                novaImg.style.margin = "8px auto 0 auto";
+                                popup.appendChild(novaImg);
+                            }
                         }
                     });
                 });
             }
 
-            // Executa quando qualquer popup do Leaflet abrir
             if (typeof map !== 'undefined' && map.on) {
                 map.on('popupopen', function() {
-                    setTimeout(corrigirImagens, 50);
+                    setTimeout(aplicarImagensCorrecao, 100);
                 });
             }
 
-            // Monitor de mutações para garantir ativação imediata
             var observer = new MutationObserver(function() {
-                corrigirImagens();
+                aplicarImagensCorrecao();
             });
             observer.observe(document.body, { childList: true, subtree: true });
         })();
-    </script>    
-    </body>
+    </script>
+            </body>
 </html>
