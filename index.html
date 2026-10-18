@@ -1132,52 +1132,47 @@
         }
     </style>
     
-        <!-- Script de Substituição Direta e Garantida para Popups -->
+        <!-- Script de Substituição Direta e Precisa para Popups -->
     <script>
         (function() {
-            // Mapeamento: Texto que aparece no popup -> Caminho EXATO na pasta images/
-            var imagensFixas = [
-                { termo: "Molhes da Barra", caminho: "images/molhes_da_barra_lado_oeste.jpg" },
-                { termo: "Museu Sacro", caminho: "images/museu_sacro.jpg" },
-                { termo: "Museu Oceanográfico", caminho: "images/museu_oceanografico.jpg" }
-            ];
+            // Mapeamento exato: Texto do popup -> Caminho da imagem na pasta images/
+            var mapaImagens = {
+                "Molhes da Barra": "images/molhes_da_barra_lado_oeste.jpg",
+                "Museu Sacro": "images/museu_sacro.jpg",
+                "Museu Oceanográfico": "images/museu_oceanografico.jpg",
+                "Ponte dos Franceses": "images/ponte_dos_franceses.jpg"
+            };
 
             function aplicarImagensCorrecao() {
                 var popups = document.querySelectorAll('.leaflet-popup-content');
                 popups.forEach(function(popup) {
                     var htmlContent = popup.innerHTML;
+                    var imagemEncontrada = false;
 
-                    imagensFixas.forEach(function(item) {
-                        // Se o popup contiver o nome do Ponto Turístico
-                        if (htmlContent.indexOf(item.termo) !== -1) {
+                    // Procura qual ponto corresponde ao popup aberto
+                    for (var termo in mapaImagens) {
+                        if (htmlContent.indexOf(termo) !== -1) {
+                            imagemEncontrada = true;
+                            var caminhoCerto = mapaImagens[termo];
                             var img = popup.querySelector('img');
-                            
+
                             if (img) {
-                                img.src = item.caminho;
+                                img.src = caminhoCerto;
                                 img.style.maxWidth = "100%";
                                 img.style.height = "auto";
                                 img.style.borderRadius = "6px";
                                 img.style.display = "block";
                                 img.style.margin = "8px auto 0 auto";
-                            } else {
-                                // Se o QGIS não criou a tag img, criamos uma nova
-                                var novaImg = document.createElement('img');
-                                novaImg.src = item.caminho;
-                                novaImg.style.maxWidth = "100%";
-                                novaImg.style.height = "auto";
-                                novaImg.style.borderRadius = "6px";
-                                novaImg.style.display = "block";
-                                novaImg.style.margin = "8px auto 0 auto";
-                                popup.appendChild(novaImg);
                             }
+                            break; // Encontrou o ponto correto, para a busca para não sobrescrever
                         }
-                    });
+                    }
                 });
             }
 
             if (typeof map !== 'undefined' && map.on) {
                 map.on('popupopen', function() {
-                    setTimeout(aplicarImagensCorrecao, 100);
+                    setTimeout(aplicarImagensCorrecao, 80);
                 });
             }
 
