@@ -150,6 +150,32 @@
             color: #2c3e50;
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
+
+        /* Botão Google Maps — somente rotas de pedal */
+        a.btn-gmaps-rota {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: #1a5c38;
+            color: #ffffff !important;
+            padding: 9px 14px;
+            border-radius: 6px;
+            text-decoration: none !important;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Open Sans', sans-serif;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            transition: background-color 0.15s ease;
+        }
+        a.btn-gmaps-rota:hover,
+        a.btn-gmaps-rota:focus {
+            background-color: #134d2e;
+            color: #ffffff !important;
+        }
+        a.btn-gmaps-rota i {
+            font-size: 14px;
+        }
          /* Aumenta o botão do controle de camadas para facilitar o toque no celular */
 .leaflet-control-layers-toggle {
     width: 44px !important;
@@ -344,13 +370,35 @@
         /* --- FUNÇÃO AUXILIAR PARA FORMATAR O NOME DA IMAGEM (SLUGIFY) --- */
         function slugify(text) {
             if (!text) return '';
-            var baseText = text.toString().replace(/\s*\(.*?\)/g, '');
-            return baseText.toLowerCase()
+            return text.toString()
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
                 .trim()
+                .replace(/\s*\(\s*/g, '_')
+                .replace(/\s*\)\s*/g, '')
                 .replace(/\s+/g, '_')
-                .replace(/[^\w\-]+/g, '')
-                .replace(/\-\-+/g, '_');
+                .replace(/[^\w_]+/g, '')
+                .replace(/_+/g, '_')
+                .replace(/^_|_$/g, '');
+        }
+
+        /* Recalcula o tamanho do popup quando a imagem termina de carregar (evita “fora de esquadro” no 1º clique) */
+        function ajustarPopupAposImagem(popup) {
+            if (!popup || !popup.getElement) return;
+            var img = popup.getElement().querySelector('img');
+            if (!img) {
+                popup.update();
+                return;
+            }
+            var atualizar = function() {
+                popup.update();
+            };
+            if (img.complete && img.naturalHeight > 0) {
+                atualizar();
+            } else {
+                img.addEventListener('load', atualizar, { once: true });
+                img.addEventListener('error', atualizar, { once: true });
+            }
         }
 
         /* --- FUNÇÃO DE TENTATIVA AUTOMÁTICA DE EXTENSÕES --- */
@@ -386,6 +434,9 @@
 
         // modify popup if contains media
         function addClassToPopupIfMedia(content, popup) {
+            if (!popup._contentNode) {
+                return;
+            }
             var tempDiv = document.createElement('div');
             tempDiv.innerHTML = content;
             var imgTd = tempDiv.querySelector('td img');
@@ -414,8 +465,40 @@
             }
         }
 
-        /* --- FUNÇÃO UNIFICADA E INTELIGENTE PARA AS ROTAS DE PEDAL --- */
-        function pop_RotaGeral(feature, layer) {
+        function urlGoogleMapsPedal(latlng) {
+            if (latlng && latlng.lat != null && latlng.lng != null) {
+                return 'https://www.google.com/maps/dir/?api=1&destination=' +
+                    latlng.lat + ',' + latlng.lng + '&travelmode=bicycling';
+            }
+            return 'https://www.google.com/maps/dir/?api=1&destination=Centro,+Rio+Grande,+RS&travelmode=bicycling';
+        }
+
+        /* Atualiza o href do botão já embutido no HTML do popup (modo ciclismo) */
+        function configurarBotaoGoogleMapsPedal(popup, tentativa) {
+            tentativa = tentativa || 0;
+            var popupEl = popup.getElement ? popup.getElement() : null;
+            if (!popupEl && tentativa < 8) {
+                setTimeout(function() {
+                    configurarBotaoGoogleMapsPedal(popup, tentativa + 1);
+                }, 40);
+                return;
+            }
+            if (!popupEl) {
+                return;
+            }
+            var btn = popupEl.querySelector('.btn-gmaps-rota');
+            if (!btn) {
+                return;
+            }
+            var latlng = popup.getLatLng ? popup.getLatLng() : null;
+            btn.setAttribute('href', urlGoogleMapsPedal(latlng));
+            btn.setAttribute('target', '_blank');
+            btn.setAttribute('rel', 'noopener noreferrer');
+            btn.removeAttribute('onclick');
+        }
+
+        /* --- FUNÇÃO UNIFICADA PARA POPUPS DE ROTAS (linhas) --- */
+        function pop_RotaGeral(feature, layer, comBotaoGoogleMaps) {
             var props = feature.properties || {};
             
             var rawDesc = props['Descrição'] ?? props['Descriçã'] ?? props['descricao'] ?? 
@@ -443,13 +526,29 @@
                     ' + (distanciaText ? '<tr>\
                         <td colspan="2" style="font-size: 11px; color: #555; padding-bottom: 2px;"><b>Distância:</b> ' + autolinker.link(distanciaText) + '</td>\
                     </tr>' : '') + '\
-                </table>';
+                </table>' +
+                (comBotaoGoogleMaps ? '<div style="margin-top: 12px; text-align: center;">' +
+                    '<a href="#" class="btn-gmaps-rota" onclick="return false;">' +
+                    '<i class="fas fa-map-marked-alt" aria-hidden="true"></i> Abrir rota no Google Maps</a></div>' : '');
             
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+            if (comBotaoGoogleMaps) {
+                layer._geopedalGmaps = true;
+            }
             layer.on('popupopen', function(e) {
-                addClassToPopupIfMedia(content, e.popup);
+                if (!comBotaoGoogleMaps) {
+                    addClassToPopupIfMedia(content, e.popup);
+                    ajustarPopupAposImagem(e.popup);
+                }
+                if (comBotaoGoogleMaps) {
+                    configurarBotaoGoogleMapsPedal(e.popup, 0);
+                }
             });
             layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function pop_RotaPedalComGmaps(feature, layer) {
+            pop_RotaGeral(feature, layer, true);
         }
 
         /* --- FUNÇÃO ESPECÍFICA PARA CICLO MOBILIDADE (EXIBE A DISTÂNCIA DO QGIS) --- */
@@ -575,7 +674,10 @@
                     <tr><td colspan="2" style="text-align: center; padding-top: 4px;"><img src="images/' + imgSlug + '.jpg" style="width: 100%; height: 130px; object-fit: cover; border-radius: 4px;" onerror="handleImageError(this, \'' + imgSlug + '\')"></td></tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) { addClassToPopupIfMedia(content, e.popup); });
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+                ajustarPopupAposImagem(e.popup);
+            });
             layer.bindPopup(content, { maxHeight: 400 });
         }
 
@@ -593,7 +695,10 @@
                     <tr><td colspan="2" style="text-align: center; padding-top: 4px;"><img src="images/' + imgSlug + '.jpg" style="width: 100%; height: 130px; object-fit: cover; border-radius: 4px;" onerror="handleImageError(this, \'' + imgSlug + '\')"></td></tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) { addClassToPopupIfMedia(content, e.popup); });
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+                ajustarPopupAposImagem(e.popup);
+            });
             layer.bindPopup(content, { maxHeight: 400 });
         }
 
@@ -627,7 +732,10 @@
                     <tr><td colspan="2" style="text-align: center; padding-top: 4px;"><img src="images/' + imgSlug + '.jpg" style="width: 100%; height: 130px; object-fit: cover; border-radius: 4px;" onerror="handleImageError(this, \'' + imgSlug + '\')"></td></tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) { addClassToPopupIfMedia(content, e.popup); });
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+                ajustarPopupAposImagem(e.popup);
+            });
             layer.bindPopup(content, { maxHeight: 400 });
         }
 
@@ -834,7 +942,7 @@
                 attribution: '',
                 interactive: true,
                 pane: 'pane_' + cfg.layer,
-                onEachFeature: pop_RotaGeral,
+                onEachFeature: pop_RotaPedalComGmaps,
                 style: function() {
                     return {
                         pane: 'pane_' + cfg.layer,
@@ -1143,17 +1251,16 @@
                 "Ponte dos Franceses": "images/ponte_dos_franceses.png"
             };
 
-            function tratarPopupComRetry(popupEl, tentativa) {
+            function tratarPopupComRetry(popupEl, popup, tentativa) {
                 if (!popupEl) return;
                 tentativa = tentativa || 0;
 
                 var img = popupEl.querySelector('img');
                 var celulas = popupEl.querySelectorAll('td');
 
-                // Se a imagem ou a tabela ainda não apareceram (comum no 1º clique), tenta novamente até 6 vezes (~360ms)
-                if ((!img || celulas.length === 0) && tentativa < 6) {
+                if ((!img || celulas.length === 0) && tentativa < 10) {
                     setTimeout(function() {
-                        tratarPopupComRetry(popupEl, tentativa + 1);
+                        tratarPopupComRetry(popupEl, popup, tentativa + 1);
                     }, 60);
                     return;
                 }
@@ -1169,22 +1276,47 @@
                     }
                 }
 
-                if (caminhoDefinitivo) {
-                    img.src = caminhoDefinitivo;
-                    img.style.display = "block";
+                if (!caminhoDefinitivo && celulas.length > 0) {
+                    var titulo = celulas[0].textContent.trim();
+                    if (titulo && typeof slugify === 'function') {
+                        caminhoDefinitivo = 'images/' + slugify(titulo) + '.jpg';
+                    }
                 }
 
-                // Padronização visual responsiva
-                img.style.maxWidth = "100%";
-                img.style.height = "auto";
-                img.style.borderRadius = "6px";
-                img.style.margin = "8px auto 0 auto";
+                var aplicarLayout = function() {
+                    img.style.display = 'block';
+                    img.style.width = '100%';
+                    img.style.maxWidth = '100%';
+                    img.style.height = '130px';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '4px';
+                    if (popup && typeof popup.update === 'function') {
+                        popup.update();
+                    }
+                };
+
+                if (caminhoDefinitivo && img.getAttribute('src') !== caminhoDefinitivo) {
+                    img.onload = aplicarLayout;
+                    img.onerror = function() {
+                        if (typeof handleImageError === 'function') {
+                            var slug = caminhoDefinitivo.replace(/^images\//, '').replace(/\.(jpg|jpeg|png|webp)$/i, '');
+                            handleImageError(img, slug);
+                        }
+                        aplicarLayout();
+                    };
+                    img.src = caminhoDefinitivo;
+                } else {
+                    aplicarLayout();
+                }
+
+                if (typeof ajustarPopupAposImagem === 'function' && popup) {
+                    ajustarPopupAposImagem(popup);
+                }
             }
 
-            // Monitora a abertura de popups
             if (typeof map !== 'undefined' && map.on) {
                 map.on('popupopen', function(e) {
-                    tratarPopupComRetry(e.popup.getElement(), 0);
+                    tratarPopupComRetry(e.popup.getElement(), e.popup, 0);
                 });
             }
 
@@ -1195,7 +1327,7 @@
                         if (node.nodeType === 1) {
                             var popupEl = node.classList && node.classList.contains('leaflet-popup') ? node : (node.querySelector ? node.querySelector('.leaflet-popup') : null);
                             if (popupEl) {
-                                tratarPopupComRetry(popupEl, 0);
+                                tratarPopupComRetry(popupEl, map._popup, 0);
                             }
                         }
                     });
@@ -1204,50 +1336,15 @@
             observer.observe(document.body, { childList: true, subtree: true });
         })();
     </script>
-<!-- Script Definitivo: Google Maps com Coordenadas Exatas da Rota (Modo Ciclismo) -->
     <script>
         (function() {
-            // Garante que o script aguarda o carregamento completo do mapa do qgis2web
-            window.addEventListener('load', function() {
-                if (typeof map !== 'undefined' && map) {
-                    map.on('popupopen', function(e) {
-                        var popup = e.popup;
-                        var popupEl = popup.getElement();
-                        if (!popupEl) return;
-
-                        // Se o popup tem imagem, é um ponto turístico -> IGNORA (exclusivo para rotas)
-                        if (popupEl.querySelector('img')) return;
-
-                        // Evita duplicar o botão se já foi injetado
-                        if (popupEl.querySelector('.btn-gmaps-rota')) return;
-
-                        // Captura a coordenada geográfica exata (lat, lng) onde o popup foi aberto na rota
-                        var latlng = popup.getLatLng();
-                        var urlGoogleMaps;
-
-                        if (latlng && latlng.lat && latlng.lng) {
-                            // Destino baseado nas coordenadas exatas do ponto da rota selecionada
-                            urlGoogleMaps = "https://www.google.com/maps/dir/?api=1&destination=" + 
-                                            latlng.lat + "," + latlng.lng + "&travelmode=bicycling";
-                        } else {
-                            // Fallback de segurança para o centro caso não pegue a coordenada
-                            urlGoogleMaps = "https://www.google.com/maps/dir/?api=1&destination=Centro,+Rio+Grande,+RS&travelmode=bicycling";
-                        }
-
-                        var contentArea = popupEl.querySelector('.leaflet-popup-content');
-                        if (contentArea) {
-                            var div = document.createElement('div');
-                            div.style.marginTop = "12px";
-                            div.style.textAlign = "center";
-                            
-                            div.innerHTML = '<a href="' + urlGoogleMaps + '" target="_blank" class="btn-gmaps-rota" ' +
-                                'style="display: inline-block; background-color: #2b7a78; color: #ffffff; padding: 8px 12px; ' +
-                                'border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold; ' +
-                                'box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🧭 Abrir Rota no Google Maps</a>';
-                            
-                            contentArea.appendChild(div);
-                        }
-                    });
+            if (typeof map === 'undefined' || !map || !map.on) {
+                return;
+            }
+            map.on('popupopen', function(e) {
+                var src = e.popup._source;
+                if (src && src._geopedalGmaps) {
+                    configurarBotaoGoogleMapsPedal(e.popup, 0);
                 }
             });
         })();
