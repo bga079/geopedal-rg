@@ -1389,7 +1389,7 @@
 
         function inicializarPlayerTutorial() {
             if (playerTutorial && typeof playerTutorial.setPlaybackRate === 'function') {
-                playerTutorial.setPlaybackRate(1.5);
+                playerTutorial.setPlaybackRate(1.0);
                 return;
             }
 
@@ -1407,11 +1407,11 @@
                     },
                     events: {
                         'onReady': function(event) {
-                            event.target.setPlaybackRate(1.5);
+                            event.target.setPlaybackRate(1.0);
                         },
                         'onStateChange': function(event) {
                             if (event.data === YT.PlayerState.PLAYING && !velocidadeTutorialAplicada) {
-                                event.target.setPlaybackRate(1.5);
+                                event.target.setPlaybackRate(1.0);
                                 velocidadeTutorialAplicada = true;
                             }
                         },
